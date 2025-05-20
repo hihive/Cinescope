@@ -133,7 +133,7 @@ class TestMoviesAPI:
         # Аутентификация суперюзер
         api_manager.auth_api.logout()
 
-    def test_delete_invalid_movie(self, api_manager: ApiManager, create_movie_for_delete_test):
+    def test_delete_invalid_movie(self, api_manager: ApiManager):
         """
         Тест на удаление информации о фильме
         """
