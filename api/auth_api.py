@@ -48,3 +48,7 @@ class AuthAPI(CustomRequester):
 
         token = response["accessToken"]
         self._update_session_headers(**{"authorization": "Bearer " + token})
+
+    def logout(self):
+        if "authorization" in self.session.headers:
+            del self.session.headers["authorization"]

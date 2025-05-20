@@ -1,6 +1,7 @@
 import pytest
 import requests
 
+from constants import SUPERUSER
 from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
 from utils.data_generator import DataGenerator
@@ -50,8 +51,8 @@ def test_user():
     }
 
 
-@pytest.fixture(scope="session")
-def test_movie():
+@pytest.fixture(scope="function")
+def test_movie_data():
     """
     Генерация случайного фильма для тестов.
     """
@@ -68,7 +69,7 @@ def test_movie():
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_movie_min_data_item():
     """
     Генерация случайного фильма c минимальным набором обязательных полей для тестов.
@@ -84,7 +85,7 @@ def test_movie_min_data_item():
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def test_movie_negative_data():
     """
     Генерация случайного фильма c минимальным набором обязательных полей для тестов.
@@ -94,3 +95,41 @@ def test_movie_negative_data():
         "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9G",
         "rating": data["rating"],
     }
+
+
+@pytest.fixture(scope="function")
+def create_movie_for_tests(api_manager, test_movie_data):
+    """
+    Создание фильма для последующих тестов с авторизацией суперюзера.
+    """
+    # Выполняем авторизацию суперюзера через api_manager
+    api_manager.auth_api.authenticate(SUPERUSER)
+
+    # Создаем фильм с использованием авторизованной сессии
+    response = api_manager.movies_api.create_movie(test_movie_data)
+
+    movie = response.json()
+    yield movie
+
+    # Удаляем фильм после тестов
+    api_manager.movies_api.delete_movie(movie["id"])
+    # Аутентификация суперюзер
+    api_manager.auth_api.logout()
+
+
+@pytest.fixture(scope="function")
+def create_movie_for_delete_test(api_manager, test_movie_data):
+    """
+    Создание фильма для DELETE тестов с авторизацией суперюзера.
+    """
+    # Выполняем авторизацию суперюзера через api_manager
+    api_manager.auth_api.authenticate(SUPERUSER)
+
+    # Создаем фильм с использованием авторизованной сессии
+    response = api_manager.movies_api.create_movie(test_movie_data)
+
+    movie = response.json()
+    yield movie
+
+    # Аутентификация суперюзер
+    api_manager.auth_api.logout()
