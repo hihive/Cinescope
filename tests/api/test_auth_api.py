@@ -20,6 +20,9 @@ class TestAuthAPI:
         """
         Тест на регистрацию и авторизацию пользователя.
         """
+        # Регистрация пользователя
+        api_manager.auth_api.register_user(test_user)
+
         login_data = {"email": test_user["email"], "password": test_user["password"]}
         response = api_manager.auth_api.login_user(login_data)
         response_data = response.json()

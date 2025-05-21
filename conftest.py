@@ -1,9 +1,11 @@
 import pytest
 import requests
 
-from constants import SUPERUSER
 from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
+from entities.user import User
+from constants.roles import Roles
+from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
 
 
@@ -33,7 +35,80 @@ def requester(session):
     return CustomRequester(session)
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
+def user_session():
+    user_pool = []
+
+    def _create_user_session():
+        session = requests.Session()
+        user_session = ApiManager(session)
+        user_pool.append(user_session)
+        return user_session
+
+    yield _create_user_session
+
+    for user in user_pool:
+        user.close_session()
+
+
+@pytest.fixture(scope="function")
+def super_admin(user_session):
+    new_session = user_session()
+
+    super_admin = User(
+        email=SuperAdminCreds.USERNAME,
+        password=SuperAdminCreds.PASSWORD,
+        roles=list(Roles.SUPER_ADMIN.value),
+        api=new_session
+    )
+
+    super_admin.api.auth_api.authenticate(super_admin.creds)
+    return super_admin
+
+
+@pytest.fixture(scope="function")
+def common_user(user_session, super_admin, creation_user_data):
+    new_session = user_session()
+
+    common_user = User(
+        email=creation_user_data["email"],
+        password=creation_user_data["password"],
+        roles=list(Roles.USER.value),
+        api=new_session
+    )
+
+    super_admin.api.user_api.create_user(creation_user_data)
+    common_user.api.auth_api.authenticate(common_user.creds)
+    return common_user
+
+
+@pytest.fixture(scope="function")
+def common_admin(user_session, super_admin, creation_user_data):
+    new_session = user_session()
+
+    common_admin = User(
+        email=creation_user_data["email"],
+        password=creation_user_data["password"],
+        roles=list(Roles.ADMIN.value),
+        api=new_session
+    )
+
+    super_admin.api.user_api.create_user(creation_user_data)
+    common_admin.api.auth_api.authenticate(common_admin.creds)
+    return common_admin
+
+
+@pytest.fixture(scope="function")
+def creation_user_data(test_user):
+    updated_data = test_user.copy()
+    updated_data.update({
+        "verified": True,
+        "banned": False
+    })
+    return updated_data
+
+
+@pytest.fixture(scope="function")
 def test_user():
     """
     Генерация случайного пользователя для тестов.
@@ -47,7 +122,7 @@ def test_user():
         "fullName": random_name,
         "password": random_password,
         "passwordRepeat": random_password,
-        "roles": ["USER"],
+        "roles": ["USER"]
     }
 
 
@@ -98,38 +173,26 @@ def test_movie_negative_data():
 
 
 @pytest.fixture(scope="function")
-def create_movie_for_tests(api_manager, test_movie_data):
+def create_movie_for_tests(api_manager, test_movie_data, super_admin):
     """
     Создание фильма для последующих тестов с авторизацией суперюзера.
     """
-    # Выполняем авторизацию суперюзера через api_manager
-    api_manager.auth_api.authenticate(SUPERUSER)
-
     # Создаем фильм с использованием авторизованной сессии
-    response = api_manager.movies_api.create_movie(test_movie_data)
+    response = super_admin.api.movies_api.create_movie(test_movie_data)
 
     movie = response.json()
     yield movie
 
     # Удаляем фильм после тестов
-    api_manager.movies_api.delete_movie(movie["id"])
-    # Аутентификация суперюзер
-    api_manager.auth_api.logout()
+    super_admin.api.movies_api.delete_movie(movie["id"])
 
 
 @pytest.fixture(scope="function")
-def create_movie_for_delete_test(api_manager, test_movie_data):
+def create_movie_for_delete_test(api_manager, test_movie_data, super_admin):
     """
     Создание фильма для DELETE тестов с авторизацией суперюзера.
     """
-    # Выполняем авторизацию суперюзера через api_manager
-    api_manager.auth_api.authenticate(SUPERUSER)
-
     # Создаем фильм с использованием авторизованной сессии
-    response = api_manager.movies_api.create_movie(test_movie_data)
+    response = super_admin.api.movies_api.create_movie(test_movie_data)
 
-    movie = response.json()
-    yield movie
-
-    # Аутентификация суперюзер
-    api_manager.auth_api.logout()
+    yield response.json()

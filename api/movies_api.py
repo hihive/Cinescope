@@ -1,4 +1,4 @@
-from constants import MOVIES_URL
+from constants.constants import MOVIES_URL
 from custom_requester.custom_requester import CustomRequester
 
 
@@ -8,6 +8,7 @@ class MoviesAPI(CustomRequester):
     """
 
     def __init__(self, session):
+        self.session = session
         super().__init__(session=session, base_url=MOVIES_URL)
 
     def get_movies(self, params=None, expected_status=200):
