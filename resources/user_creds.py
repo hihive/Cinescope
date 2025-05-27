@@ -1,6 +1,8 @@
-class SuperAdminCreds:
-    USERNAME = 'api1@gmail.com'
-    PASSWORD = 'asdqwe123Q'
+import os
+from dotenv import load_dotenv
 
-    def __init__(self):
-        pass
+load_dotenv()
+
+class SuperAdminCreds:
+    USERNAME = os.getenv("SUPER_ADMIN_USERNAME")
+    PASSWORD = os.getenv("SUPER_ADMIN_PASSWORD")

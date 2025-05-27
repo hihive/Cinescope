@@ -1,15 +1,12 @@
-from api.api_manager import ApiManager
-from conftest import test_movie_data
-from constants.constants import SUPERUSER, INVALID_MOVIE_ID
+import pytest
 
-
-def auth_superuser(api_manager: ApiManager):
-    api_manager.auth_api.authenticate(SUPERUSER)
+from conftest import test_movie_data, common_user, common_admin, super_admin
+from constants.constants import INVALID_MOVIE_ID
 
 
 class TestMoviesAPI:
     # VALID TESTS
-    def test_get_movies(self, api_manager: ApiManager):
+    def test_get_movies(self, api_manager):
         """
         Тест на получение информации о фильмах
         """
@@ -19,20 +16,24 @@ class TestMoviesAPI:
         # Проверка, что фильмы есть в базе
         assert isinstance(response.json()["movies"], list)
 
-    def test_get_movies_with_params(self, api_manager: ApiManager):
+    @pytest.mark.parametrize("params", [
+        {"minPrice": 10, "maxPrice": 50, "genreId": 1},
+        {"minPrice": 100, "maxPrice": 200, "genreId": 3}
+    ])
+    def test_get_movies_with_params(self, api_manager, params):
         """
         Тест на получение информации о фильмах с фильтром
         """
         # Получение списка фильмов c фильтром
-        params = {"minPrice": 10, "maxPrice": 50}
         response = api_manager.movies_api.get_movies(params)
 
         response_data = response.json()
         # Проверка на соответствие фильтру
         for movie in response_data["movies"]:
-            assert (params["minPrice"] < movie["price"] < params["maxPrice"]), "Ошибка фильтрации"
+            assert (params["minPrice"] < movie["price"] < params["maxPrice"]), "Ошибка фильтрации по полю price"
+            assert movie["genreId"] == params["genreId"], "Ошибка фильтрации по полю genreId"
 
-    def test_get_movie(self, api_manager: ApiManager, create_movie_for_tests):
+    def test_get_movie(self, api_manager, create_movie_for_tests):
         """
         Тест на получение информации о фильме
         """
@@ -80,8 +81,37 @@ class TestMoviesAPI:
         # Проверка, что фильм больше не доступен
         super_admin.api.movies_api.get_movie(movie_id, expected_status=404)
 
+
+    @pytest.mark.slow
+    @pytest.mark.parametrize("user,expected_status", [
+        ("common_user", 403),
+        ("common_admin", 403),
+        ("super_admin", 200)
+    ], ids=["User", "Admin", "SuperAdmin"])
+    def test_delete_movie_all_users(self, super_admin, create_movie_for_delete_test, user, expected_status, request):
+        """
+        Тест на удаление фильмов всеми видами пользователей
+        """
+        # Активирую фикстуры переданные через parametrize
+        user_fixture = request.getfixturevalue(user)
+
+        # Создаю фильм, чтобы получить его id
+        movie = create_movie_for_delete_test
+        movie_id = movie["id"]
+
+        # Удаление фильма с валидным ID
+        user_fixture.api.movies_api.delete_movie(movie_id, expected_status=expected_status)
+
+        # Чистка после пользователей у которых нет прав на удаление фильмов
+        if expected_status == 403:
+            super_admin.api.movies_api.delete_movie(movie_id)
+
+        # Проверяю, что фильм действительно был удален
+        user_fixture.api.movies_api.get_movie(movie_id, expected_status=404)
+
     # INVALID TESTS
-    def test_get_invalid_movie(self, api_manager: ApiManager, create_movie_for_tests):
+    @pytest.mark.slow
+    def test_get_invalid_movie(self, api_manager, create_movie_for_tests):
         """
         Тест на получение информации о фильме по несуществующему id
         """
@@ -95,13 +125,14 @@ class TestMoviesAPI:
         # Проверка создания фильма с отсутствием обязательных полей
         super_admin.api.movies_api.create_movie(test_movie_negative_data, expected_status=400)
 
-    def test_create_movie_with_unauthorization_user(self, api_manager: ApiManager, test_movie_data):
+    def test_create_movie_with_unauthorization_user(self, api_manager, test_movie_data):
         """
         Тест на создание фильма незарегистрированным пользователем
         """
         # Проверка создания фильма с незарегистрированным пользователем
         api_manager.movies_api.create_movie(test_movie_data, expected_status=401)
 
+    @pytest.mark.slow
     def test_create_movie_without_access_user(self, common_admin, test_movie_data):
         """
         Тест на создание фильма пользователем без прав доступа

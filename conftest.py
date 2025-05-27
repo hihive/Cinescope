@@ -4,9 +4,10 @@ import requests
 from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
 from entities.user import User
-from constants.roles import Roles
+from enums.roles import Roles
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
+from models.base_models import UserData
 
 
 @pytest.fixture(scope="session")
@@ -37,6 +38,9 @@ def requester(session):
 
 @pytest.fixture(scope="function")
 def user_session():
+    """
+    Фикстура для создания пользовательской сессии.
+    """
     user_pool = []
 
     def _create_user_session():
@@ -53,6 +57,9 @@ def user_session():
 
 @pytest.fixture(scope="function")
 def super_admin(user_session):
+    """
+    Фикстура для создания сессии супер админа.
+    """
     new_session = user_session()
 
     super_admin = User(
@@ -68,12 +75,15 @@ def super_admin(user_session):
 
 @pytest.fixture(scope="function")
 def common_user(user_session, super_admin, creation_user_data):
+    """
+    Фикстура для создания сессии пользователя.
+    """
     new_session = user_session()
 
     common_user = User(
-        email=creation_user_data["email"],
-        password=creation_user_data["password"],
-        roles=list(Roles.USER.value),
+        email=creation_user_data.email,
+        password=creation_user_data.password,
+        roles=[Roles.USER.value],
         api=new_session
     )
 
@@ -84,11 +94,14 @@ def common_user(user_session, super_admin, creation_user_data):
 
 @pytest.fixture(scope="function")
 def common_admin(user_session, super_admin, creation_user_data):
+    """
+    Фикстура для создания сессии админа.
+    """
     new_session = user_session()
 
     common_admin = User(
-        email=creation_user_data["email"],
-        password=creation_user_data["password"],
+        email=creation_user_data.email,
+        password=creation_user_data.password,
         roles=list(Roles.ADMIN.value),
         api=new_session
     )
@@ -100,30 +113,29 @@ def common_admin(user_session, super_admin, creation_user_data):
 
 @pytest.fixture(scope="function")
 def creation_user_data(test_user):
-    updated_data = test_user.copy()
-    updated_data.update({
+    """
+    Фикстура для создания объекта зарегистрированного пользователя.
+    """
+    return test_user.model_copy(update={
         "verified": True,
         "banned": False
     })
-    return updated_data
 
 
 @pytest.fixture(scope="function")
-def test_user():
+def test_user() -> UserData:
     """
-    Генерация случайного пользователя для тестов.
+    Генерация объекта случайного пользователя для тестов.
     """
-    random_email = DataGenerator.generate_random_email()
-    random_name = DataGenerator.generate_random_name()
     random_password = DataGenerator.generate_random_password()
 
-    return {
-        "email": random_email,
-        "fullName": random_name,
-        "password": random_password,
-        "passwordRepeat": random_password,
-        "roles": ["USER"]
-    }
+    return UserData(
+        email=DataGenerator.generate_random_email(),
+        fullName=DataGenerator.generate_random_name(),
+        password=random_password,
+        passwordRepeat=random_password,
+        roles=[Roles.USER.value]
+    )
 
 
 @pytest.fixture(scope="function")
