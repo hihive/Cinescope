@@ -1,7 +1,5 @@
 import datetime
 from datetime import timezone
-from http.cookiejar import UTC_ZONES
-from venv import logger
 
 import pytest
 
@@ -168,9 +166,10 @@ class TestMoviesAPI:
 
         # Подготовка тестовых данных
         movie = DataGenerator.generate_random_movie()
+        movie_name = movie["name"]
 
         # Проверка, что на данный момент такого фильма нет в БД
-        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie["name"])
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
         assert movies_from_db.count() == 0, "В базе уже присутствует фильм с таким названием"
 
         # Создаю фильм
@@ -180,7 +179,7 @@ class TestMoviesAPI:
 
 
         # Проверка
-        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == response["name"])
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
         assert movies_from_db.one(), "В базе уже присутствует фильм с таким названием"
 
         movie_from_db = movies_from_db.first()
