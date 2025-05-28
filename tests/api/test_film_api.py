@@ -1,7 +1,14 @@
+import datetime
+from datetime import timezone
+from http.cookiejar import UTC_ZONES
+from venv import logger
+
 import pytest
 
 from conftest import test_movie_data, common_user, common_admin, super_admin
 from constants.constants import INVALID_MOVIE_ID
+from models.base_models import MovieDBModel
+from utils.data_generator import DataGenerator
 
 
 class TestMoviesAPI:
@@ -153,3 +160,42 @@ class TestMoviesAPI:
         """
         # Удаление фильма с невалидным ID
         super_admin.api.movies_api.delete_movie(INVALID_MOVIE_ID, expected_status=404)
+
+    def test_create_delete_movie(self, super_admin, db_session):
+        """
+        Тест на проверку работы БД при создании и удалении фильма
+        """
+
+        # Подготовка тестовых данных
+        movie = DataGenerator.generate_random_movie()
+
+        # Проверка, что на данный момент такого фильма нет в БД
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie["name"])
+        assert movies_from_db.count() == 0, "В базе уже присутствует фильм с таким названием"
+
+        # Создаю фильм
+        response = super_admin.api.movies_api.create_movie(movies_data=movie)
+        assert response.status_code == 201, "Фильм должен успешно создаться"
+        response = response.json()
+
+
+        # Проверка
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == response["name"])
+        assert movies_from_db.one(), "В базе уже присутствует фильм с таким названием"
+
+        movie_from_db = movies_from_db.first()
+
+        # Проверка что сервис заполнил верно created_at с погрешностью в 5 минут
+        assert movie_from_db.created_at >= (
+                datetime.datetime.now(timezone.utc).replace(tzinfo=None) - datetime.timedelta(
+            minutes=5)), "Сервис выставил время создания с большой погрешностью"
+
+        # Удаляем фильм из базы данных
+        super_admin.api.movies_api.delete_movie(movie_id=response["id"])
+
+
+        # проверяем что в конце тестирования фильма с таким названием действительно нет в базе
+        movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
+        assert movies_from_db.count() == 0, "Фильм небыл удален из базы!"
+
+

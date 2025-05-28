@@ -9,11 +9,25 @@ faker = Faker('ru_RU')
 class DataGenerator:
 
     @staticmethod
+    def generate_random_str(n: int):
+        random_string = "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=8)
+        )
+        return random_string
+
+    @staticmethod
     def generate_random_email():
         random_string = "".join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
         return f"kek{random_string}@gmail.com"
+
+    @staticmethod
+    def generate_random_id():
+        random_string = "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=8)
+        )
+        return f"test_id_{random_string}"
 
     @staticmethod
     def generate_random_name():

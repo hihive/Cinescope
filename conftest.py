@@ -1,5 +1,11 @@
+import datetime
+import os
+
 import pytest
 import requests
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
@@ -7,7 +13,62 @@ from entities.user import User
 from enums.roles import Roles
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
-from models.base_models import UserData
+from models.base_models import UserData, UserDBModel
+
+load_dotenv()
+USERNAME = os.getenv("USERNAME")
+PASSWORD = os.getenv("PASSWORD")
+HOST = os.getenv("HOST")
+PORT = os.getenv("PORT")
+DATABASE_NAME = os.getenv("DATABASE_NAME")
+
+engine = create_engine(f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}") # Создаем движок (engine) для подключения к базе данных
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) # Создаем фабрику сессий
+
+@pytest.fixture(scope="module")
+def db_session():
+    """
+    Фикстура, которая создает и возвращает сессию для работы с базой данных.
+    После завершения теста сессия автоматически закрывается.
+    """
+    # Создаем новую сессию
+    db_session = SessionLocal()
+    # Возвращаем сессию в тест
+    yield db_session
+    # Закрываем сессию после завершения теста
+    db_session.close()
+
+
+# @pytest.fixture(scope="module")
+# def db_session():
+#     """
+#     Фикстура с областью видимости module.
+#     Тестовые данные создаются один раз для всех тестов в модуле.
+#     """
+#     session = SessionLocal()
+#
+#     # Создаем тестовые данные
+#     test_user = UserDBModel(
+#         id = DataGenerator.generate_random_id(),
+#         email = DataGenerator.generate_random_email(),
+#         full_name = DataGenerator.generate_random_name(),
+#         password = DataGenerator.generate_random_password(),
+#         created_at = datetime.datetime.now(),
+#         updated_at = datetime.datetime.now(),
+#         verified = False,
+#         banned = False,
+#         roles = "{USER}"
+#     )
+#     session.add(test_user) #добавляем обьект в базу данных
+#     session.commit() #сохраняем изменения для всех остальных подключений
+#
+#     yield session # можете запустить тесты в дебаг режиме и поставить тут брекпойнт
+#                   # зайдите в базу и убедитесь что нывй обьект был создан
+#
+# 	#код ниже выполнится после всех запущеных тестов
+#     session.delete(test_user) # Удаляем тестовые данные
+#     session.commit() # сохраняем изменения для всех остальных подключений
+#     session.close() #завершем сессию (отключаемся от базы данных)
 
 
 @pytest.fixture(scope="session")
