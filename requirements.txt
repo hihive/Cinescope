@@ -24,3 +24,4 @@ requests==2.32.3
 tzdata==2025.2
 urllib3==2.4.0
 pydantic~=2.11.5
+SQLAlchemy~=2.0.41
