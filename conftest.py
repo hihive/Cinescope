@@ -22,8 +22,11 @@ HOST = os.getenv("HOST")
 PORT = os.getenv("PORT")
 DATABASE_NAME = os.getenv("DATABASE_NAME")
 
-engine = create_engine(f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}") # Создаем движок (engine) для подключения к базе данных
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine) # Создаем фабрику сессий
+# Создаем движок (engine) для подключения к базе данных
+engine = create_engine(f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}")
+# Создаем фабрику сессий
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 @pytest.fixture(scope="module")
 def db_session():

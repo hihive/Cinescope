@@ -60,8 +60,10 @@ class RegisterUserResponse(BaseModel):
         return value
 
 
-#Модель базы данных для пользователя
 class UserDBModel(Base):
+    """
+    Модель базы данных для пользователя.
+    """
     __tablename__ = 'users'
     id = Column(String, primary_key=True)
     email = Column(String)
@@ -91,3 +93,12 @@ class MovieDBModel(Base):
     rating = Column(Integer)  # Рейтинг фильма
     published = Column(Boolean)  # Опубликован ли фильм
     created_at = Column(DateTime)  # Дата создания записи
+
+
+class AccountTransactionTemplate(Base):
+    """
+    Модель для таблицы accounts_transaction_template.
+    """
+    __tablename__ = 'accounts_transaction_template'
+    user = Column(String, primary_key=True)
+    balance = Column(Integer, nullable=False)

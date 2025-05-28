@@ -86,7 +86,6 @@ class TestMoviesAPI:
         # Проверка, что фильм больше не доступен
         super_admin.api.movies_api.get_movie(movie_id, expected_status=404)
 
-
     @pytest.mark.slow
     @pytest.mark.parametrize("user,expected_status", [
         ("common_user", 403),
@@ -177,7 +176,6 @@ class TestMoviesAPI:
         assert response.status_code == 201, "Фильм должен успешно создаться"
         response = response.json()
 
-
         # Проверка
         movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
         assert movies_from_db.one(), "В базе уже присутствует фильм с таким названием"
@@ -186,15 +184,12 @@ class TestMoviesAPI:
 
         # Проверка что сервис заполнил верно created_at с погрешностью в 5 минут
         assert movie_from_db.created_at >= (
-                datetime.datetime.now(timezone.utc).replace(tzinfo=None) - datetime.timedelta(
-            minutes=5)), "Сервис выставил время создания с большой погрешностью"
+                datetime.datetime.now(timezone.utc).replace(tzinfo=None) - datetime.timedelta(minutes=5)
+        ), "Сервис выставил время создания с большой погрешностью"
 
         # Удаляем фильм из базы данных
         super_admin.api.movies_api.delete_movie(movie_id=response["id"])
 
-
         # проверяем что в конце тестирования фильма с таким названием действительно нет в базе
         movies_from_db = db_session.query(MovieDBModel).filter(MovieDBModel.name == movie_name)
-        assert movies_from_db.count() == 0, "Фильм небыл удален из базы!"
-
-
+        assert movies_from_db.count() == 0, "Фильм не был удален из базы!"

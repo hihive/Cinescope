@@ -34,8 +34,7 @@ class TestAuthAPI:
 
         # Проверки
         assert "accessToken" in response, "Токен доступа отсутствует в ответе"
-        assert  response["user"]["email"] == test_user.email, "Email не совпадает"
-
+        assert response["user"]["email"] == test_user.email, "Email не совпадает"
 
     @pytest.mark.parametrize("email, password, expected_status", [
         (f"{SuperAdminCreds.USERNAME}", f"{SuperAdminCreds.PASSWORD}", 200),

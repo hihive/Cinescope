@@ -96,4 +96,3 @@ class CustomRequester:
                                  f"\nDATA: {RED}{response_data}{RESET}")
         except Exception as e:
             self.logger.info(f"\nLogging went wrong: {type(e)} - {e}")
-
