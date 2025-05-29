@@ -73,6 +73,3 @@
 # if __name__ == "__main__":
 #     sdl_alchemy_SQL()
 #     sdl_alchemy_ORM()
-#
-#
-#

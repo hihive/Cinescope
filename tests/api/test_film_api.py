@@ -1,26 +1,44 @@
 import datetime
 from datetime import timezone
+from venv import logger
 
+import allure
 import pytest
 
-from conftest import test_movie_data, common_user, common_admin, super_admin
+from conftest import test_movie_data, common_admin, super_admin
 from constants.constants import INVALID_MOVIE_ID
-from models.base_models import MovieDBModel
+from models.base_models import MovieDBModel, MoviesDataResponse
 from utils.data_generator import DataGenerator
 
 
+@allure.epic("Тестирование работы MoviesAPI")
 class TestMoviesAPI:
-    # VALID TESTS
+    @allure.title("Тест на получение информации о фильмах.")
+    @allure.description("""
+        Этот тест проверяет наличие информации о фильмах в сервисе.
+        Шаги:
+        1. Получение полного списка фильмов без фильтра для поиска.
+        2. Проверка данных.
+        """)
+    @allure.severity(allure.severity_level.CRITICAL)
     def test_get_movies(self, api_manager):
         """
         Тест на получение информации о фильмах
         """
-        # Получение полного списка фильмов без фильтров
-        response = api_manager.movies_api.get_movies()
+        with allure.step("Получение полного списка фильмов без фильтра для поиска"):
+            response = api_manager.movies_api.get_movies()
 
-        # Проверка, что фильмы есть в базе
-        assert isinstance(response.json()["movies"], list)
+        with allure.step("Проверка, что фильмы есть в базе"):
+            assert isinstance(response.json()["movies"], list)
 
+    @allure.title("Тест на получение информации о фильмах c фильтром для поиска.")
+    @allure.description("""
+        Этот тест проверяет наличие информации о фильмах в сервисе с фильтром для поиска.
+        Шаги:
+        1. Получение списка фильмов c фильтром для поиска.
+        2. Проверка данных на соответствие фильтру.
+        """)
+    @allure.severity(allure.severity_level.NORMAL)
     @pytest.mark.parametrize("params", [
         {"minPrice": 10, "maxPrice": 50, "genreId": 1},
         {"minPrice": 100, "maxPrice": 200, "genreId": 3}
@@ -29,48 +47,73 @@ class TestMoviesAPI:
         """
         Тест на получение информации о фильмах с фильтром
         """
-        # Получение списка фильмов c фильтром
-        response = api_manager.movies_api.get_movies(params)
+        with allure.step("Получение списка фильмов c фильтром для поиска"):
+            response = api_manager.movies_api.get_movies(params).json()
 
-        response_data = response.json()
-        # Проверка на соответствие фильтру
-        for movie in response_data["movies"]:
-            assert (params["minPrice"] < movie["price"] < params["maxPrice"]), "Ошибка фильтрации по полю price"
-            assert movie["genreId"] == params["genreId"], "Ошибка фильтрации по полю genreId"
+        with allure.step("Проверка данных на соответствие фильтру"):
+            for movie in response["movies"]:
+                assert (params["minPrice"] < movie["price"] < params["maxPrice"]), "Ошибка фильтрации по полю price"
+                assert movie["genreId"] == params["genreId"], "Ошибка фильтрации по полю genreId"
 
-    def test_get_movie(self, api_manager, create_movie_for_tests):
-        """
-        Тест на получение информации о фильме
-        """
-        # Создаю фильм, чтобы получить его id
-        movie = create_movie_for_tests
-
-        # Проверка получения фильма с валидным ID
-        api_manager.movies_api.get_movie(movie["id"])
-
-    def test_create_movie(self, test_movie_data, super_admin):
+    @allure.title("Тест на создание фильма")
+    @allure.description("""
+    Этот тест проверяет создание фильма и фильма только с обязательными полями.
+    Шаги:
+    1. Активация фикстур переданные через parametrize.
+    2. Создание фильма с валидными данными".
+    3. Десериализация ответа в объект MoviesDataResponse.
+    4. Проверка данных.
+    5. Удаление фильма после тестов.
+    """)
+    @allure.severity(allure.severity_level.CRITICAL)
+    @pytest.mark.parametrize("data", [
+        "test_movie_data",
+        "test_movie_min_data_item",
+    ], ids=["data", "min_data"])
+    def test_create_movie(self, data, super_admin, request):
         """
         Тест на создание фильма
         """
-        # Проверка создания фильма с валидными данными
-        super_admin.api.movies_api.create_movie(test_movie_data)
+        with allure.step("Активация фикстур переданные через parametrize"):
+            data_fixture = request.getfixturevalue(data)
 
-    def test_create_movie_with_min_data_item(self, test_movie_min_data_item, super_admin):
-        """
-        Тест на создание фильма только с обязательными полями
-        """
-        # Проверка создания фильма с минимальным набором обязательных полей
-        super_admin.api.movies_api.create_movie(test_movie_min_data_item)
+        with allure.step("Создание фильма с валидными данными"):
+            response = super_admin.api.movies_api.create_movie(data_fixture)
 
-    def test_update_movie(self, test_movie_data, create_movie_for_tests, super_admin):
+        with allure.step("Десериализация ответа в объект MoviesDataResponse"):
+            movie = MoviesDataResponse(**response.json())
+
+        with allure.step("Проверка данных"):
+            assert movie.name == data_fixture.name, "Название фильмов не совпадает"
+
+        with allure.step("Удаление фильма после тестов"):
+            super_admin.api.movies_api.delete_movie(movie.id)
+
+    @allure.title("Тест на обновление фильма")
+    @allure.description("""
+    Этот тест проверяет обновление фильма.
+    Шаги:
+    1. Создание фильма через фикстуру.
+    2. Обновление фильма.
+    3. Десериализация ответа в объект MoviesDataResponse.
+    4. Проверка, что фильм обновился.
+    """)
+    @allure.severity(allure.severity_level.CRITICAL)
+    def test_update_movie(self, test_movie_for_update_data, create_movie_for_tests, super_admin):
         """
         Тест на обновление фильма
         """
-        # Создаю фильм, чтобы получить его id
-        movie = create_movie_for_tests
+        with allure.step("Создание фильма через фикстуру"):
+            movie = create_movie_for_tests
 
-        # Успешное обновление фильма с валидным ID
-        super_admin.api.movies_api.update_movie(movie["id"], test_movie_data)
+        with allure.step("Обновление фильма"):
+            updated_movie = super_admin.api.movies_api.update_movie(movie["id"], test_movie_for_update_data).json()
+
+        with allure.step("Десериализация ответа в объект MoviesDataResponse"):
+            updated_movie = MoviesDataResponse(**updated_movie)
+
+        with allure.step("Проверка, что фильм обновился"):
+            assert movie["name"] != updated_movie.name, "Фильмы совпадают"
 
     def test_delete_movie(self, create_movie_for_delete_test, super_admin):
         """

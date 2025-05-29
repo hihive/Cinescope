@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import Column, String, Boolean, DateTime, Integer, ForeignKey
 from sqlalchemy.orm import declarative_base
 
-from enums.roles import Roles
+from enums.models import Roles, Location
 
 Base = declarative_base()
 
@@ -45,11 +45,11 @@ class UserData(BaseModel):
 class RegisterUserResponse(BaseModel):
     id: str
     email: str = Field(pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
-    fullName: str = Field(min_length=1, max_length=100, description="Полное имя пользователя")
+    fullName: str = Field(..., min_length=1, max_length=100, description="Полное имя пользователя")
     verified: bool
     banned: bool
     roles: list[Roles]
-    createdAt: str = Field(description="Дата и время создания пользователя в формате ISO 8601")
+    createdAt: str = Field(..., description="Дата и время создания пользователя в формате ISO 8601")
 
     @field_validator("createdAt")
     def validate_created_at(cls, value: str) -> str:
@@ -58,6 +58,38 @@ class RegisterUserResponse(BaseModel):
         except ValueError:
             raise ValueError("Некорректный формат даты и времени")
         return value
+
+
+class MoviesData(BaseModel):
+    """
+    Pydantic модель для фильмов
+    """
+    name: str
+    price: float
+    description: str
+    imageUrl: Optional[str] = None
+    location: Location
+    published: bool
+    genreId: int
+    genre: Optional[dict[str, str]] = None
+    rating: Optional[float] = Field(default=None, ge=0, le=5)
+
+
+class MoviesDataResponse(BaseModel):
+    """
+    Pydantic модель для получения фильмов
+    """
+    id: int
+    name: str
+    price: float
+    description: str
+    imageUrl: Optional[str]
+    location: Location
+    published: bool
+    genreId: int
+    genre: dict[str, str]
+    createdAt: str
+    rating: float = Field(..., ge=0, le=5)
 
 
 class UserDBModel(Base):
@@ -95,10 +127,10 @@ class MovieDBModel(Base):
     created_at = Column(DateTime)  # Дата создания записи
 
 
-class AccountTransactionTemplate(Base):
-    """
-    Модель для таблицы accounts_transaction_template.
-    """
-    __tablename__ = 'accounts_transaction_template'
-    user = Column(String, primary_key=True)
-    balance = Column(Integer, nullable=False)
+# class AccountTransactionTemplate(Base):
+#     """
+#     Модель для таблицы accounts_transaction_template.
+#     """
+#     __tablename__ = 'accounts_transaction_template'
+#     user = Column(String, primary_key=True)
+#     balance = Column(Integer, nullable=False)

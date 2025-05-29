@@ -9,7 +9,14 @@ faker = Faker('ru_RU')
 class DataGenerator:
 
     @staticmethod
-    def generate_random_str(n: int):
+    def generate_random_int(n: int) -> int:
+        return int("".join(
+            random.choices(string.digits, k=n)
+        ))
+
+
+    @staticmethod
+    def generate_random_str():
         random_string = "".join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
@@ -67,6 +74,6 @@ class DataGenerator:
             "description": faker.text(max_nb_chars=200),
             "location": random.choice(["MSK", "SPB"]),
             "published": True,
-            "rating": random.randint(1, 10),
+            "rating": random.randint(1, 5),
             "genreId": 3,
         }

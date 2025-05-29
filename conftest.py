@@ -10,10 +10,10 @@ from sqlalchemy.orm import sessionmaker
 from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
 from entities.user import User
-from enums.roles import Roles
+from enums.models import Roles
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
-from models.base_models import UserData, UserDBModel
+from models.base_models import UserData, UserDBModel, MoviesData
 
 load_dotenv()
 USERNAME = os.getenv("USERNAME")
@@ -208,16 +208,35 @@ def test_movie_data():
     Генерация случайного фильма для тестов.
     """
     data = DataGenerator.generate_random_movie()
-    return {
-        "name": data["name"],
-        "imageUrl": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9G",
-        "price": data["price"],
-        "description": data["description"],
-        "location": data["location"],
-        "published": data["published"],
-        "rating": data["rating"],
-        "genreId": data["genreId"],
-    }
+
+    return MoviesData(
+        name = data["name"],
+        imageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9G",
+        price = data["price"],
+        description = data["description"],
+        location = data["location"],
+        published = data["published"],
+        rating = data["rating"],
+        genreId = data["genreId"]
+    )
+
+@pytest.fixture(scope="function")
+def test_movie_for_update_data():
+    """
+    Генерация случайного фильма для тестов.
+    """
+    data = DataGenerator.generate_random_movie()
+
+    return MoviesData(
+        name = data["name"],
+        imageUrl = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9G",
+        price = data["price"],
+        description = data["description"],
+        location = data["location"],
+        published = data["published"],
+        rating = data["rating"],
+        genreId = data["genreId"]
+    )
 
 
 @pytest.fixture(scope="function")
@@ -226,14 +245,15 @@ def test_movie_min_data_item():
     Генерация случайного фильма c минимальным набором обязательных полей для тестов.
     """
     data = DataGenerator.generate_random_movie()
-    return {
-        "name": data["name"],
-        "price": data["price"],
-        "description": data["description"],
-        "location": data["location"],
-        "published": data["published"],
-        "genreId": data["genreId"],
-    }
+
+    return MoviesData(
+        name = data["name"],
+        price = data["price"],
+        description = data["description"],
+        location = data["location"],
+        published = data["published"],
+        genreId = data["genreId"]
+    )
 
 
 @pytest.fixture(scope="function")
