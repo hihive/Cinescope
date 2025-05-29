@@ -13,7 +13,7 @@ from entities.user import User
 from enums.models import Roles
 from resources.user_creds import SuperAdminCreds
 from utils.data_generator import DataGenerator
-from models.base_models import UserData, UserDBModel, MoviesData
+from models.base_models import UserData, UserDBModel, MoviesData, MoviesDataResponse
 
 load_dotenv()
 USERNAME = os.getenv("USERNAME")
@@ -290,5 +290,6 @@ def create_movie_for_delete_test(api_manager, test_movie_data, super_admin):
     """
     # Создаем фильм с использованием авторизованной сессии
     response = super_admin.api.movies_api.create_movie(test_movie_data)
+    movie = MoviesDataResponse(**response.json())
 
-    yield response.json()
+    yield movie

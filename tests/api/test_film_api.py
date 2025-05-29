@@ -1,6 +1,5 @@
 import datetime
 from datetime import timezone
-from venv import logger
 
 import allure
 import pytest
@@ -115,19 +114,28 @@ class TestMoviesAPI:
         with allure.step("Проверка, что фильм обновился"):
             assert movie["name"] != updated_movie.name, "Фильмы совпадают"
 
+    @allure.title("Тест на удаление фильма")
+    @allure.description("""
+    Этот тест проверяет удаление фильма.
+    Шаги:
+    1. Создание фильма через фикстуру и получение его ID.
+    2. Успешное удаление фильма с валидным ID.
+    3. Проверка, что фильм больше не доступен.
+    """)
+    @allure.severity(allure.severity_level.NORMAL)
     def test_delete_movie(self, create_movie_for_delete_test, super_admin):
         """
-        Тест на удаление информации о фильме
+        Тест на удаление фильма
         """
-        # Создаю фильм, чтобы получить его id
-        movie = create_movie_for_delete_test
-        movie_id = movie["id"]
+        with allure.step("Создание фильма через фикстуру и получение его ID"):
+            movie = create_movie_for_delete_test
+            movie_id = movie.id
 
-        # Успешное удаление фильма с валидным ID
-        super_admin.api.movies_api.delete_movie(movie_id)
+        with allure.step("Успешное удаление фильма с валидным ID"):
+            super_admin.api.movies_api.delete_movie(movie_id)
 
-        # Проверка, что фильм больше не доступен
-        super_admin.api.movies_api.get_movie(movie_id, expected_status=404)
+        with allure.step("Проверка, что фильм больше не доступен"):
+            super_admin.api.movies_api.get_movie(movie_id, expected_status=404)
 
     @pytest.mark.slow
     @pytest.mark.parametrize("user,expected_status", [
@@ -144,7 +152,7 @@ class TestMoviesAPI:
 
         # Создаю фильм, чтобы получить его id
         movie = create_movie_for_delete_test
-        movie_id = movie["id"]
+        movie_id = movie.id
 
         # Удаление фильма с валидным ID
         user_fixture.api.movies_api.delete_movie(movie_id, expected_status=expected_status)
