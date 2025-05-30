@@ -1,5 +1,6 @@
 import allure
 import pytest
+from faker.providers.bank.en_PH import logger
 
 from models.base_models import RegisterUserResponse
 
