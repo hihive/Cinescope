@@ -27,3 +27,4 @@ pydantic~=2.11.5
 SQLAlchemy~=2.0.41
 pytz~=2025.2
 allure-python-commons~=2.14.2
+playwright~=1.52.0

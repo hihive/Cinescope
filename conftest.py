@@ -1,4 +1,3 @@
-import datetime
 import os
 
 import pytest
@@ -6,24 +5,20 @@ import requests
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-
-from custom_requester.custom_requester import CustomRequester
 from api.api_manager import ApiManager
+from constants.constants import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DATABASE_NAME
+from custom_requester.custom_requester import CustomRequester
 from entities.user import User
 from enums.models import Roles
+from models.base_models import UserData, MoviesData, MoviesDataResponse
 from resources.user_creds import SuperAdminCreds
+from tools.tools import Tools
 from utils.data_generator import DataGenerator
-from models.base_models import UserData, UserDBModel, MoviesData, MoviesDataResponse
 
-load_dotenv()
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
-HOST = os.getenv("HOST")
-PORT = os.getenv("PORT")
-DATABASE_NAME = os.getenv("DATABASE_NAME")
+
 
 # Создаем движок (engine) для подключения к базе данных
-engine = create_engine(f"postgresql+psycopg2://{USERNAME}:{PASSWORD}@{HOST}:{PORT}/{DATABASE_NAME}")
+engine = create_engine(f"postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DATABASE_NAME}")
 # Создаем фабрику сессий
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -201,6 +196,40 @@ def test_user() -> UserData:
         roles=[Roles.USER.value]
     )
 
+
+
+
+
+#### UI ####
+
+
+DEFAULT_UI_TIMEOUT = 30000
+
+@pytest.fixture(scope="session")  # Браузер запускается один раз для всей сессии
+def browser(playwright):
+    browser = playwright.chromium.launch(headless=False)  # headless=True для CI/CD, headless=False для локальной разработки
+    yield browser  # yield возвращает значение фикстуры, выполнение теста продолжится после yield
+    browser.close()  # Браузер закрывается после завершения всех тестов
+
+
+@pytest.fixture(scope="function")  # Контекст создается для каждого теста
+def context(browser):
+    context = browser.new_context()
+    context.tracing.start(screenshots=True, snapshots=True, sources=True)  # Трассировка для отладки
+    context.set_default_timeout(DEFAULT_UI_TIMEOUT)  # Установка таймаута по умолчанию
+    yield context  # yield возвращает значение фикстуры, выполнение теста продолжится после yield
+    log_name = f"trace_{Tools.get_timestamp()}.zip"
+    trace_path = Tools.files_dir('playwright_trace', log_name)
+    context.tracing.stop(path=trace_path)
+    context.close()  # Контекст закрывается после завершения теста
+
+@pytest.fixture(scope="function")  # Страница создается для каждого теста
+def page(context):
+    page = context.new_page()
+    yield page  # yield возвращает значение фикстуры, выполнение теста продолжится после yield
+    page.close()  # Страница закрывается после завершения теста
+
+#### MOVIES ####
 
 @pytest.fixture(scope="function")
 def test_movie_data():
