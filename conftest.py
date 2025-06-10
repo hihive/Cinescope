@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from api.api_manager import ApiManager
-from constants.constants import DB_USERNAME, DB_PASSWORD, DB_HOST, DB_PORT, DATABASE_NAME
+from constants.constants import PG_URL
 from custom_requester.custom_requester import CustomRequester
 from entities.user import User
 from enums.models import Roles
@@ -18,7 +18,7 @@ from utils.data_generator import DataGenerator
 
 
 # Создаем движок (engine) для подключения к базе данных
-engine = create_engine(f"postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DATABASE_NAME}")
+engine = create_engine(PG_URL)
 # Создаем фабрику сессий
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

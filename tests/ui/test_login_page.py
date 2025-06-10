@@ -17,6 +17,5 @@ def test_login(page, common_user):
 
     page.click(login_locator)
 
-
     page.wait_for_url(UI_MOVIES_URL)
     expect(page.get_by_text("Вы вошли в аккаунт")).to_be_visible(visible=True)
