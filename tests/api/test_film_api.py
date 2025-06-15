@@ -7,7 +7,6 @@ import pytest
 from conftest import test_movie_data, common_admin, super_admin
 from constants.constants import INVALID_MOVIE_ID
 from models.base_models import MovieDBModel, MoviesDataResponse
-from utils.data_generator import DataGenerator
 
 
 @allure.epic("Тестирование работы MoviesAPI")

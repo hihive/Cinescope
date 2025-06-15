@@ -1,27 +1,21 @@
 import allure
-from playwright.sync_api import expect
+import pytest
 
-from constants.constants import UI_MOVIES_URL, LOGIN_ENDPOINT
+from models.page_object_models import CinescopLoginPage
 
 
-@allure.epic("Тестирование работы UI")
-@allure.feature("Тестирование взаимодействия авторизованного пользователя с UI")
+@allure.epic("Тестирование UI")
+@allure.feature("Тестирование Страницы Login")
+@pytest.mark.ui
 class TestLoginUser:
-    @allure.title("Тест на авторизацию существующего пользователя")
-    def test_login(self, page, common_user):
+    @allure.title("Проведение успешного входа в систему")
+    def test_login_by_ui(self, page, common_user):
+        login_page = CinescopLoginPage(page)
 
-        page.goto(UI_MOVIES_URL + LOGIN_ENDPOINT)
-
-        email_locator = "[data-qa-id='login_email_input']"
-        password_locator = "[data-qa-id='login_password_input']"
-
+        login_page.open()
         # page.pause()
-        page.fill(selector=email_locator, value=common_user.email)
-        page.fill(selector=password_locator, value=common_user.password)
+        login_page.login(common_user.email, common_user.password)
 
-        login_locator = "[data-qa-id='login_submit_button']"
-
-        page.click(login_locator)
-
-        page.wait_for_url(UI_MOVIES_URL)
-        expect(page.get_by_text("Вы вошли в аккаунт")).to_be_visible(visible=True)
+        login_page.assert_was_redirect_to_home_page()
+        login_page.make_screenshot_and_attach_to_allure()
+        login_page.assert_alert_was_pop_us()

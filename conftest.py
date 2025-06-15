@@ -197,9 +197,6 @@ def test_user() -> UserData:
     )
 
 
-
-
-
 #### UI ####
 
 
@@ -210,7 +207,6 @@ def browser(playwright):
     browser = playwright.chromium.launch(headless=False)  # headless=True для CI/CD, headless=False для локальной разработки
     yield browser  # yield возвращает значение фикстуры, выполнение теста продолжится после yield
     browser.close()  # Браузер закрывается после завершения всех тестов
-
 
 @pytest.fixture(scope="function")  # Контекст создается для каждого теста
 def context(browser):

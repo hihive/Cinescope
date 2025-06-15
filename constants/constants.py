@@ -5,11 +5,13 @@ from dotenv import load_dotenv
 USER_URL = "https://auth.dev-cinescope.coconutqa.ru"
 MOVIES_URL = "https://api.dev-cinescope.coconutqa.ru"
 UI_MOVIES_URL = "https://dev-cinescope.coconutqa.ru"
+UI_HOME_PAGE_URL = "https://dev-cinescope.coconutqa.ru/"
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
 
 LOGIN_ENDPOINT = "/login"
 REGISTER_ENDPOINT = "/register"
+ALL_MOVIES_ENDPOINT = "/movies"
 
 
 INVALID_MOVIE_ID = 99999
